@@ -1,0 +1,2 @@
+# nginx rewrite rule
+rewrite ^/(.*)$ /index.php/$1 last;

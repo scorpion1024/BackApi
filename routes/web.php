@@ -25,3 +25,5 @@ $router->post('do_delete', 'User@do_delete');
 $router->post('get_list', 'User@get_list');
 $router->get('get_menu', 'User@get_menu');
 $router->get('get_weather_data', 'User@get_weather_data');
+$router->get('api/yg/devServer/flow/myApprovalListPage', 'User@myApplyListPage');
+$router->get('api/yg/devServer/usertask/list/bizKey', 'User@myApplyFlow');

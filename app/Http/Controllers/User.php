@@ -9,7 +9,7 @@ class User extends BaseController
 {
 
     function __construct(){
-        $this->key = env('APP_KEY');
+        $this->key = 4;
     }
 
     public function do_login(Request $request){
@@ -21,6 +21,7 @@ class User extends BaseController
         if(empty($results)){
             return response()->json(['code'=>2,'msg'=>'密码错误']);
         }else{
+            
             return response()->json(['code'=>0,'msg'=>self::en_secret($results)]);
         }
         
@@ -141,18 +142,81 @@ class User extends BaseController
         return response()->json(['highchart'=>array_values($highchart),'echart'=>array_values($echart)]); 
     }
 
-    public function get_menu(Request $request,$need_pwd = false){
-        $city_arr= ['北京','成都','上海'];
-        $insert_arr=[];
-        for ($i=0; $i < 9999; $i++) {
-            $rad_num = mt_rand(100,999);
-            $rad_time = date('Y-m-d H:i:s',mt_rand(strtotime('2021-01-01'),time()));
-            $rad_city = $city_arr[array_rand($city_arr)];
-            array_push($insert_arr,['city'=>$rad_city,'rain_num'=>$rad_num,'fall_time'=>$rad_time]);
+    public function myApplyListPage(Request $request){
+        $input_param = $request->input();
+        $current = isset($input_param['current'])?$input_param['current']:1;
+        $size = isset($input_param['size'])?$input_param['size']:10;
+        $approvalStatus = isset($input_param['approvalStatus'])?$input_param['approvalStatus']:'1';
+        if($approvalStatus === '2'){
+            $results = DB::table('applylist')->whereIn('status',['2','3'])->offset($current-1)->limit($size)->orderBy('startTime', 'desc')->get();
+        }else{
+            $results = DB::table('applylist')->where('status',1)->offset($current-1)->limit($size)->orderBy('startTime', 'desc')->get();
         }
+        //echo '<pre>';print_r(DB::table('applylist')->where($where)->toSql());exit;
+        return response()->json(['code'=>0,'records'=>$results,'total'=>DB::table('applylist')->where('status',$approvalStatus)->count()]); 
+    }
+
+    public function myApplyFlow(Request $request){
+        $input_param = $request->input();
+        if(isset($input_param['approvalCode'])&&!empty($input_param['approvalCode'])){
+            $results = DB::table('approvalflow')->where('approvalCode',$input_param['approvalCode'])->orderBy('id', 'desc')->get();
+        }else{
+            return false;
+        }
+        return response()->json(['code'=>0,'data'=>$results]); 
+    }
+
+    public function get_menu(Request $request,$need_pwd = false){
+        // $city_arr= ['北京','成都','上海'];
+        $insert_arr=[];
+        // for ($i=0; $i < 9999; $i++) {
+        //     $rad_num = mt_rand(100,999);
+        //     $rad_time = date('Y-m-d H:i:s',mt_rand(strtotime('2021-01-01'),time()));
+        //     $rad_city = $city_arr[array_rand($city_arr)];
+        //     array_push($insert_arr,['city'=>$rad_city,'rain_num'=>$rad_num,'fall_time'=>$rad_time]);
+        // }
         // DB::table('city_weather')->insertOrIgnore($insert_arr);
-        echo '<pre>';print_r(base64_encode('THZYb2lvt09TWERvZU5oUWlsRDJTdz09oxlvaGlsTThqMWw4ZGFFeA=='));
+        //echo '<pre>';print_r(base64_encode('THZYb2lvt09TWERvZU5oUWlsRDJTdz09oxlvaGlsTThqMWw4ZGFFeA=='));
         //return date('Y-m-d H:i:s',$rad_time).'----'.$rad_city;
+        // $type_arr= ['H','F','C','T','A'];
+        // $status_arr= ['1','2','3'];
+        $name_arr= ['张三','李四','王五','赵六','测试'];
+        // $type_str= ['H'=>'HOTEL','F'=>'TICKET','C'=>'CAR','T'=>'TRAIN','A'=>'APPLY'];
+        // for ($i=0; $i < 9; $i++) {
+        //     $rad_num = mt_rand(100,999);
+        //     $rad_time = date('YmdHis');
+        //     $rad_city = $type_arr[array_rand($type_arr)];
+        //     $name = $name_arr[array_rand($name_arr)];
+        //     $status = $status_arr[array_rand($status_arr)];
+        //     $type=$type_str[$rad_city];
+        //     $code=$rad_city.'_'.$rad_time.$rad_num.($i+1);
+        //     array_push($insert_arr,['approvalCode'=>$code,'applicantReason'=>'测试原因测试原因测试原因测试原因测试原因测试原因测试原因测试原因测试原因测试原因测试原因测试原因测试原因','applicant'=>$name,'startTime'=>date('Y-m-d H:i:s'),'bizCode'=>$type,'status'=>$status]);
+        // }
+        $approvalStatus='1';
+        if($approvalStatus === '2'){
+            $results = DB::table('applylist')->whereIn('status',['2','3'])->orderBy('startTime', 'desc')->get();
+        }else{
+            $results = DB::table('applylist')->where('status',1)->orderBy('startTime', 'desc')->get();
+        }
+        echo '<pre>';
+        foreach($results as $value){
+            $arr = [
+            'approvalCode'=>$value->approvalCode,
+            'approveDate'=>date('Y-m-d H:i:s'),
+            'approveOpt'=>$value->applicantReason,
+            'approvers'=>$name_arr[array_rand($name_arr)],
+            'status'=>2,
+            'deptName'=>'测试部门'
+            ];
+            $i_max = mt_rand(1,5);
+            for ($i=0; $i <=$i_max ; $i++) { 
+                array_push($insert_arr,$arr);
+            }
+            $arr['status']=$value->status;
+            array_push($insert_arr,$arr);
+        }
+        //print_r($insert_arr);
+        return DB::table('approvalflow')->insertOrIgnore($insert_arr);
     }
    
     private function getRandomStr($len, $special=true){
